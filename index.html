@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#161c22">
+<title>Доклад смены ОПОРА</title>
+<style>
+  :root {
+    --head: #161c22;
+    --accent: #1e3a5f;
+    --accent-2: #2b5288;
+    --bg: #e9ecef;
+    --card: #ffffff;
+    --text: #161c22;
+    --muted: #5f6b76;
+    --line: #cfd5db;
+    --field: #f6f7f8;
+    --ok: #1f5e3a;
+    --bad: #9b1c1c;
+    --bad-bg: #f9e8e8;
+    --radius: 6px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.4 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    padding-bottom: 92px;
+    -webkit-text-size-adjust: 100%;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+
+  /* Шапка */
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--head); color: #fff;
+    border-bottom: 3px solid var(--accent-2);
+  }
+  .hdr { max-width: 640px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
+  .mark {
+    flex: none; width: 40px; height: 40px; border: 2px solid #fff; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; letter-spacing: .5px;
+  }
+  .hdr-text { min-width: 0; }
+  .hdr h1 { margin: 0; font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; }
+  .hdr .sub { font-size: 13px; color: #aab4be; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .progress { height: 3px; background: #2a333c; }
+  .progress > div { height: 100%; width: 0; background: #6f9fd8; transition: width .2s; }
+
+  main { max-width: 640px; margin: 0 auto; padding: 12px 12px 0; }
+  .card {
+    background: var(--card); border-radius: var(--radius);
+    padding: 14px 14px 16px; margin-bottom: 10px;
+    border: 1px solid var(--line); border-left: 4px solid var(--accent);
+  }
+  .card.invalid { border-color: var(--bad); border-left-color: var(--bad); background: #fffafa; }
+  .card h2 {
+    margin: 0 0 14px; font-size: 14px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .6px;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  .card h2 .n { color: var(--accent-2); font-variant-numeric: tabular-nums; }
+  label.f { display: block; font-size: 13px; color: var(--muted); margin: 0 0 5px; }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  input[type=text], input[type=date], textarea {
+    display: block; width: 100%; min-width: 0;
+    padding: 11px 12px; border: 1px solid var(--line); border-radius: var(--radius);
+    background: var(--field);
+  }
+  input[type=date] { min-height: 46px; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent-2); outline-offset: -1px; background: #fff; }
+  textarea { min-height: 84px; resize: vertical; }
+  .row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+
+  /* Счётчик */
+  .stepper {
+    display: flex; align-items: stretch; min-width: 0;
+    border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--field);
+  }
+  .stepper button {
+    flex: none; width: 44px; min-height: 46px; border: 0; background: #e2e6ea;
+    font-size: 22px; line-height: 1; color: var(--accent); cursor: pointer; touch-action: manipulation;
+  }
+  .stepper button:active { background: #cdd4db; }
+  .stepper input {
+    flex: 1 1 auto; width: 100%; min-width: 0; border: 0; text-align: center;
+    font-size: 19px; font-weight: 700; background: transparent; padding: 0;
+    -moz-appearance: textfield; font-variant-numeric: tabular-nums;
+  }
+  .stepper input:focus { outline: none; background: #fff; }
+  .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  .total {
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid var(--line); padding-top: 10px; margin-top: 12px;
+    font-size: 14px; text-transform: uppercase; letter-spacing: .4px; color: var(--muted);
+  }
+  .total b { font-size: 20px; color: var(--text); }
+
+  /* Компании: название сверху, счётчик и удаление снизу — ничего не вылезает на узких экранах */
+  .company { border: 1px solid var(--line); border-radius: var(--radius); padding: 8px; margin-bottom: 8px; background: #fbfbfc; }
+  .company .line { display: flex; gap: 8px; margin-top: 8px; align-items: stretch; }
+  .company .stepper { flex: 1 1 auto; }
+  .company .stepper button { width: 40px; min-height: 40px; }
+  .del {
+    flex: none; width: 44px; border: 1px solid var(--line); border-radius: var(--radius);
+    background: #fff; color: var(--bad); font-size: 13px; cursor: pointer;
+  }
+  .btn-line {
+    display: block; width: 100%; padding: 10px; cursor: pointer;
+    border: 1px dashed #9aa6b2; border-radius: var(--radius); background: none;
+    color: var(--accent); font-size: 14px; font-weight: 600;
+  }
+  @media (min-width: 480px) {
+    .company { display: flex; gap: 8px; padding: 0; border: 0; background: none; }
+    .company > input { flex: 1 1 auto; }
+    .company .line { margin-top: 0; flex: 0 0 200px; }
+  }
+
+  /* Выбор вариантов */
+  .seg { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label {
+    display: flex; align-items: center; justify-content: center; min-height: 46px;
+    padding: 8px 6px; border: 1px solid var(--line); border-radius: var(--radius);
+    background: var(--field); cursor: pointer; font-weight: 600; font-size: 15px; text-align: center;
+  }
+  .seg input:checked + label { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .seg input:checked + label.good { background: var(--ok); border-color: var(--ok); }
+  .seg input:checked + label.warn { background: var(--bad); border-color: var(--bad); }
+  .seg input:focus-visible + label { outline: 2px solid var(--accent-2); outline-offset: 1px; }
+
+  /* Комментарий к пункту */
+  .note { margin-top: 12px; }
+  .note-toggle {
+    border: 0; background: none; padding: 4px 0; cursor: pointer;
+    color: var(--accent-2); font-size: 14px; font-weight: 600;
+  }
+  .note-body { display: none; }
+  .note.open .note-toggle { display: none; }
+  .note.open .note-body { display: block; }
+  .note.required label.f { color: var(--bad); font-weight: 600; }
+
+  .err { color: var(--bad); font-size: 13px; margin-top: 8px; display: none; }
+  .card.invalid .err { display: block; }
+
+  footer {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+    background: #fff; border-top: 1px solid var(--line);
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  }
+  footer .inner, .sheet-actions {
+    max-width: 640px; margin: 0 auto;
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 10px;
+  }
+  .btn {
+    min-width: 0; border-radius: var(--radius); padding: 13px 10px; cursor: pointer;
+    font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: .5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .btn.primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
+  .btn.ghost { background: #fff; color: var(--text); border: 1px solid var(--line); }
+
+  /* Предпросмотр документа */
+  .modal { position: fixed; inset: 0; background: rgba(10,14,18,.7); z-index: 20; display: none; overflow: auto; padding: 12px; }
+  .modal.show { display: block; }
+  .sheet { max-width: 640px; margin: 0 auto; background: #fff; padding: 24px 18px; font-family: "Times New Roman", serif; color: #000; }
+  .sheet h3 { text-align: center; margin: 0 0 4px; font-size: 18px; text-transform: uppercase; }
+  .sheet .meta { text-align: center; margin-bottom: 16px; font-size: 15px; }
+  .sheet table { width: 100%; border-collapse: collapse; font-size: 15px; margin-bottom: 12px; table-layout: fixed; }
+  .sheet td, .sheet th { border: 1px solid #000; padding: 5px 7px; vertical-align: top; text-align: left; overflow-wrap: anywhere; }
+  .sheet th { background: #efefef; font-weight: 700; }
+  .sheet .c { font-style: italic; }
+  .sheet .sign { margin-top: 22px; display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+  .sheet-actions { margin-top: 10px; }
+  .toast {
+    position: fixed; left: 12px; right: 12px; bottom: 90px; max-width: 420px; margin: 0 auto;
+    background: var(--head); color: #fff; padding: 12px 14px; border-radius: var(--radius);
+    font-size: 14px; z-index: 30; display: none; text-align: center;
+  }
+
+  /* Вход по коду */
+  .gate { position: fixed; inset: 0; z-index: 40; background: var(--head); color: #fff; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .gate.show { display: flex; }
+  .gate .box { width: 100%; max-width: 340px; text-align: center; }
+  .gate .mark { margin: 0 auto 16px; width: 56px; height: 56px; font-size: 16px; }
+  .gate h2 { margin: 0 0 4px; font-size: 16px; text-transform: uppercase; letter-spacing: .6px; }
+  .gate p { margin: 0 0 20px; color: #aab4be; font-size: 14px; }
+  .gate input {
+    width: 100%; padding: 14px; border-radius: var(--radius); border: 1px solid #3a4550;
+    background: #222b33; color: #fff; text-align: center; font-size: 26px; letter-spacing: 10px;
+  }
+  .gate input:focus { outline: 2px solid #6f9fd8; }
+  .gate .btn { width: 100%; margin-top: 12px; }
+  .gate .gerr { color: #f08c8c; font-size: 14px; min-height: 20px; margin-top: 10px; }
+  .gate.shake .box { animation: shake .3s; }
+  @keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <form class="box" id="gateForm" autocomplete="off">
+    <div class="mark">ЧОП</div>
+    <h2>ЧОП «ОПОРА»</h2>
+    <p>Введите код доступа</p>
+    <input type="password" id="gateCode" inputmode="numeric" pattern="[0-9]*" maxlength="12" aria-label="Код доступа">
+    <button class="btn primary" type="submit">Войти</button>
+    <div class="gerr" id="gateErr"></div>
+  </form>
+</div>
+
+<header>
+  <div class="hdr">
+    <div class="mark">ЧОП</div>
+    <div class="hdr-text">
+      <h1>ЧОП «ОПОРА» · Доклад смены</h1>
+      <div class="sub" id="hdrDate"></div>
+    </div>
+  </div>
+  <div class="progress"><div id="bar"></div></div>
+</header>
+
+<main>
+  <section class="card" data-req="who">
+    <h2><span class="n">01</span>Смена</h2>
+    <div class="field">
+      <label class="f" for="date">Дата доклада</label>
+      <input type="date" id="date">
+    </div>
+    <div class="field">
+      <label class="f">Смена</label>
+      <div class="seg">
+        <input type="radio" name="shift" id="shiftDay" value="Дневная"><label for="shiftDay">Дневная</label>
+        <input type="radio" name="shift" id="shiftNight" value="Ночная"><label for="shiftNight">Ночная</label>
+      </div>
+    </div>
+    <div class="field">
+      <label class="f" for="officer">Старший смены</label>
+      <input type="text" id="officer" autocomplete="off" autocapitalize="words" placeholder="ФИО">
+    </div>
+    <div class="err">Укажите смену и ФИО старшего смены</div>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">02</span>Посетители</h2>
+    <div class="field">
+      <label class="f">Общее количество</label>
+      <div class="stepper" data-stepper><button type="button" data-d="-1" aria-label="Меньше">−</button><input type="number" inputmode="numeric" min="0" id="visitors" value="0"><button type="button" data-d="1" aria-label="Больше">+</button></div>
+    </div>
+    <label class="f">Компании / организации</label>
+    <div id="companies"></div>
+    <button type="button" class="btn-line" id="addCompany">Добавить компанию</button>
+    <div class="note" data-note="visitorsNote"></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">03</span>Пропуск автомашин</h2>
+    <div class="row2">
+      <div class="field">
+        <label class="f">Въезд</label>
+        <div class="stepper" data-stepper><button type="button" data-d="-1" aria-label="Меньше">−</button><input type="number" inputmode="numeric" min="0" id="carsIn" value="0"><button type="button" data-d="1" aria-label="Больше">+</button></div>
+      </div>
+      <div class="field">
+        <label class="f">Выезд</label>
+        <div class="stepper" data-stepper><button type="button" data-d="-1" aria-label="Меньше">−</button><input type="number" inputmode="numeric" min="0" id="carsOut" value="0"><button type="button" data-d="1" aria-label="Больше">+</button></div>
+      </div>
+    </div>
+    <div class="total">Всего <b id="carsTotal">0</b></div>
+    <div class="note" data-note="carsNote"></div>
+  </section>
+
+  <section class="card" data-req="patrol">
+    <h2><span class="n">04</span>Обходы территории</h2>
+    <div class="field">
+      <label class="f">Количество обходов</label>
+      <div class="stepper" data-stepper><button type="button" data-d="-1" aria-label="Меньше">−</button><input type="number" inputmode="numeric" min="0" id="patrolCount" value="0"><button type="button" data-d="1" aria-label="Больше">+</button></div>
+    </div>
+    <div class="field">
+      <label class="f">Обходы по графику</label>
+      <div class="seg">
+        <input type="radio" name="patrol" id="patrolYes" value="yes"><label class="good" for="patrolYes">Выполнены</label>
+        <input type="radio" name="patrol" id="patrolNo" value="no"><label class="warn" for="patrolNo">Не выполнены</label>
+      </div>
+    </div>
+    <div class="note" data-note="patrolText" data-required-when="patrol=no" data-required-label="Причина невыполнения"></div>
+    <div class="err">Отметьте, выполнены ли обходы</div>
+  </section>
+
+  <section class="card" data-req="remarks">
+    <h2><span class="n">05</span>Замечания</h2>
+    <div class="seg">
+      <input type="radio" name="remarks" id="remarksNo" value="no"><label class="good" for="remarksNo">Нет</label>
+      <input type="radio" name="remarks" id="remarksYes" value="yes"><label class="warn" for="remarksYes">Есть</label>
+    </div>
+    <div class="note" data-note="remarksText" data-required-when="remarks=yes" data-required-label="Суть замечаний"></div>
+    <div class="err">Отметьте, есть ли замечания</div>
+  </section>
+
+  <section class="card" data-req="incidents">
+    <h2><span class="n">06</span>Происшествия</h2>
+    <div class="seg">
+      <input type="radio" name="incidents" id="incNo" value="no"><label class="good" for="incNo">Нет</label>
+      <input type="radio" name="incidents" id="incYes" value="yes"><label class="warn" for="incYes">Есть</label>
+    </div>
+    <div class="note" data-note="incidentsText" data-required-when="incidents=yes"
+         data-required-label="Описание: время, место, участники, принятые меры"></div>
+    <div class="err">Отметьте, были ли происшествия</div>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">07</span>Общий комментарий</h2>
+    <textarea id="comment" placeholder="Например: смену сдал в 08:00 старшему следующей смены, ключи и рации переданы, связь и видеонаблюдение работают, техника в исправном состоянии"></textarea>
+  </section>
+</main>
+
+<footer>
+  <div class="inner">
+    <button class="btn ghost" id="reset" type="button">Очистить</button>
+    <button class="btn primary" id="submit" type="button">Отправить доклад</button>
+  </div>
+</footer>
+
+<div class="modal" id="modal">
+  <div class="sheet" id="sheet"></div>
+  <div class="sheet-actions">
+    <button class="btn ghost" id="back" type="button">Исправить</button>
+    <button class="btn primary" id="confirm" type="button">Подтвердить</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// Доклад шифруется открытым ключом бота и публикуется в секретный топик ntfy.sh.
+// Бот на сервере забирает его оттуда, расшифровывает, собирает PDF и отправляет в чат.
+// Прочитать доклад может только сервер с закрытым ключом.
+const ENDPOINT = 'https://ntfy.sh/chop-PFqQOqZOihKZPXrgzY2PBF1d8xtMt9cl';
+const PUBLIC_KEY = 'MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA1dMpEdjRyU5BxliiZ0sC2Ec2fhwLxZq3zOqoZdSqwAndY1QEiMH0VyfDuk7EFEjm3f7/s9DLOFrO9Mt2Lb9r76PS0QNqNAAz38DP1AiHbT8LMTW0qXNG9tb8+VCbg/qP/wKqEzbzNJCbqr01pE9LZp0WdfYGJ6pYyRrN+tkSIDALFDSHDy/gqj5A6PEnmvFHxshLk/K6BuyFWc4ubrqBzvo6wFHi+mZnWhN3tnzn5fjpBdXkAJz+k03wK2NurkkQ+80f1Q3Q827HGRV9rMyvUAE+iD8Z7TeQeJvDSFCRo/OjLStHt+DY50cN0Zlx2YcqXtDrkctCnJNWlBsAbQINtlx/hyWftqmuKjJELkt+Soq2TsoEw5VvWrN9ve8YFevNH4Rr6B2HST0NecqpNl2Dif0XjIzjlFDubnJt/hNHhjfEhKZzIW+3Afig4+A9YqYFH2QI//qu3DgaRuh9cD3v9d2gEKAjuj5Fj/9o96IvSw7z6qZpRpXgX213eV6L5fNhAgMBAAE=';
+
+const b64enc = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const b64dec = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function deflate(bytes) {
+  if (!window.CompressionStream) return null;
+  const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+// Конверт: RSA-OAEP(SHA-256) оборачивает одноразовый ключ AES-256-GCM
+async function encryptReport(obj) {
+  if (!window.crypto || !crypto.subtle) throw new Error('Шифрование недоступно: откройте форму по ссылке https://');
+  let data = new TextEncoder().encode(JSON.stringify(obj));
+  const packed = await deflate(data).catch(() => null);
+  if (packed) data = packed;
+  const pub = await crypto.subtle.importKey('spki', b64dec(PUBLIC_KEY), { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt']);
+  const aes = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aes, data);
+  const k = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, pub, await crypto.subtle.exportKey('raw', aes));
+  return JSON.stringify({ v: 1, z: packed ? 1 : 0, k: b64enc(k), iv: b64enc(iv), ct: b64enc(ct) });
+}
+const STORE = 'opora-report-draft';
+// Код доступа проверяется ботом на сервере; здесь — только хэш для мгновенной подсказки «неверный код»
+const CODE_HASH = '42a997364648e720f86391fb518994a46d94135f199729aaca7a12b9a127b3af';
+let accessCode = '';
+const $ = id => document.getElementById(id);
+const officer = $('officer');
+
+// Идентификатор черновика: при повторной отправке после обрыва связи сервер не продублирует доклад
+const newId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+let draftId = newId();
+
+function todayISO() {
+  const d = new Date();
+  return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+}
+function ruDate(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}.${m}.${y}`;
+}
+
+// ---------- счётчики ----------
+function bindStepper(el) {
+  const input = el.querySelector('input');
+  el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    input.value = Math.max(0, (parseInt(input.value, 10) || 0) + Number(b.dataset.d));
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }));
+  input.addEventListener('focus', () => input.select());
+}
+document.querySelectorAll('[data-stepper]').forEach(bindStepper);
+
+// ---------- комментарии к пунктам ----------
+// Свёрнуты под кнопкой; если пункт требует пояснения (Есть / Не выполнены) — раскрываются и становятся обязательными.
+document.querySelectorAll('[data-note]').forEach(n => {
+  n.innerHTML = `
+    <button type="button" class="note-toggle">+ Комментарий</button>
+    <div class="note-body">
+      <label class="f" for="${n.dataset.note}">Комментарий</label>
+      <textarea id="${n.dataset.note}"></textarea>
+    </div>`;
+  n.querySelector('.note-toggle').addEventListener('click', () => {
+    n.classList.add('open');
+    n.querySelector('textarea').focus();
+  });
+});
+function noteRequired(n) {
+  const rule = n.dataset.requiredWhen;
+  if (!rule) return false;
+  const [name, val] = rule.split('=');
+  return radioVal(name) === val;
+}
+function syncNotes() {
+  document.querySelectorAll('[data-note]').forEach(n => {
+    const req = noteRequired(n);
+    const ta = n.querySelector('textarea');
+    n.classList.toggle('required', req);
+    if (req || ta.value.trim()) n.classList.add('open');
+    n.querySelector('label.f').textContent = req ? n.dataset.requiredLabel : 'Комментарий';
+  });
+}
+
+// ---------- компании ----------
+function addCompany(name = '', count = 0) {
+  const row = document.createElement('div');
+  row.className = 'company';
+  row.innerHTML = `
+    <input type="text" placeholder="Название компании">
+    <div class="line">
+      <div class="stepper" data-stepper><button type="button" data-d="-1" aria-label="Меньше">−</button><input type="number" inputmode="numeric" min="0" value="${count}"><button type="button" data-d="1" aria-label="Больше">+</button></div>
+      <button type="button" class="del" aria-label="Удалить">✕</button>
+    </div>`;
+  row.querySelector('input[type=text]').value = name;
+  bindStepper(row.querySelector('[data-stepper]'));
+  row.querySelector('.del').addEventListener('click', () => { row.remove(); save(); });
+  $('companies').appendChild(row);
+}
+$('addCompany').addEventListener('click', () => { addCompany(); save(); });
+
+const radioVal = name => (document.querySelector(`input[name=${name}]:checked`) || {}).value || '';
+const NUMS = ['visitors', 'carsIn', 'carsOut', 'patrolCount'];
+const TEXTS = ['officer', 'visitorsNote', 'carsNote', 'patrolText', 'remarksText', 'incidentsText', 'comment'];
+
+// ---------- сбор данных ----------
+function collect() {
+  const d = {
+    id: draftId,
+    code: accessCode,
+    date: $('date').value,
+    shift: radioVal('shift'),
+    patrol: radioVal('patrol'),
+    remarks: radioVal('remarks'),
+    incidents: radioVal('incidents'),
+    companies: [...document.querySelectorAll('.company')].map(r => ({
+      name: r.querySelector('input[type=text]').value.trim(),
+      count: parseInt(r.querySelector('input[type=number]').value, 10) || 0,
+    })),
+  };
+  for (const k of NUMS) d[k] = parseInt($(k).value, 10) || 0;
+  for (const k of TEXTS) d[k] = $(k).value.trim();
+  return d;
+}
+
+function apply(d) {
+  draftId = d.id || newId();
+  $('date').value = d.date || todayISO();
+  document.querySelectorAll('.seg input').forEach(r => { r.checked = d[r.name] === r.value; });
+  for (const k of NUMS) $(k).value = d[k] || 0;
+  for (const k of TEXTS) $(k).value = d[k] || '';
+  document.querySelectorAll('[data-note]').forEach(n => n.classList.remove('open'));
+  $('companies').innerHTML = '';
+  const list = d.companies && d.companies.length ? d.companies : [{}, {}, {}];
+  list.forEach(c => addCompany(c.name || '', c.count || 0));
+}
+
+// ---------- черновик ----------
+function save() {
+  try { localStorage.setItem(STORE, JSON.stringify(collect())); } catch (e) {}
+  refresh();
+}
+function load() {
+  let d = {};
+  try { d = JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) {}
+  try { d.officer = d.officer || localStorage.getItem('opora-officer') || ''; } catch (e) {}
+  // ФИО и смену помним всегда, остальное — только черновик за сегодня
+  if (d.date && d.date !== todayISO()) d = { officer: d.officer, shift: d.shift };
+  apply(d);
+}
+
+// ---------- проверка ----------
+function validate(d, mark) {
+  const problems = {
+    who: !d.shift || !d.officer,
+    patrol: !d.patrol || (d.patrol === 'no' && !d.patrolText),
+    remarks: !d.remarks || (d.remarks === 'yes' && !d.remarksText),
+    incidents: !d.incidents || (d.incidents === 'yes' && !d.incidentsText),
+  };
+  if (mark) {
+    for (const [k, bad] of Object.entries(problems)) {
+      const card = document.querySelector(`[data-req=${k}]`);
+      card.classList.toggle('invalid', bad);
+      if (k !== 'who' && d[k]) card.querySelector('.err').textContent = 'Заполните пояснение';
+    }
+  }
+  return Object.values(problems).filter(Boolean).length;
+}
+
+function refresh() {
+  const d = collect();
+  $('carsTotal').textContent = d.carsIn + d.carsOut;
+  $('hdrDate').textContent = `за ${ruDate(d.date)}${d.shift ? ' · ' + d.shift.toLowerCase() + ' смена' : ''}`;
+  syncNotes();
+  $('bar').style.width = ((4 - validate(d, false)) / 4 * 100) + '%';
+  if (document.querySelector('.card.invalid')) validate(d, true);
+}
+
+document.addEventListener('input', save);
+document.addEventListener('change', save);
+
+// ---------- предпросмотр документа ----------
+const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const txt = s => esc(s).replace(/\n/g, '<br>');
+const row = (title, val, note) =>
+  `<tr><th>${title}</th><td>${val}${note ? `<div class="c">${txt(note)}</div>` : ''}</td></tr>`;
+
+function renderSheet(d) {
+  const comps = d.companies.filter(c => c.name || c.count);
+  const compRows = comps.length
+    ? comps.map(c => `<tr><td>${esc(c.name || '—')}</td><td>${c.count}</td></tr>`).join('')
+    : '<tr><td colspan="2">—</td></tr>';
+  return `
+    <h3>Доклад старшего смены</h3>
+    <div class="meta">ЧОП «ОПОРА» · ${ruDate(d.date)} · ${esc(d.shift.toLowerCase())} смена</div>
+    <table>
+      <col style="width:45%"><col>
+      ${row('Старший смены', esc(d.officer))}
+      ${row('Посетители, всего', d.visitors, d.visitorsNote)}
+    </table>
+    <table><col><col style="width:28%"><tr><th>Компания</th><th>Кол-во</th></tr>${compRows}</table>
+    <table>
+      <col style="width:45%"><col>
+      ${row('Автомашины — въезд', d.carsIn)}
+      ${row('Автомашины — выезд', d.carsOut)}
+      ${row('Автомашины — всего', d.carsIn + d.carsOut, d.carsNote)}
+      ${row('Обходы территории', `${d.patrol === 'no' ? 'Не выполнены' : 'Выполнены'}, количество: ${d.patrolCount}`, d.patrolText)}
+      ${row('Замечания', d.remarks === 'yes' ? 'Есть' : 'Нет', d.remarksText)}
+      ${row('Происшествия', d.incidents === 'yes' ? 'Есть' : 'Нет', d.incidentsText)}
+      ${d.comment ? row('Общий комментарий', txt(d.comment)) : ''}
+    </table>
+    <div class="sign"><span>Старший смены: ${esc(d.officer)}</span><span>${ruDate(d.date)}</span></div>`;
+}
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = 'none', 2500);
+}
+
+$('submit').addEventListener('click', () => {
+  const d = collect();
+  if (validate(d, true)) {
+    document.querySelector('.card.invalid').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    toast('Заполните пункты, отмеченные красным');
+    return;
+  }
+  $('sheet').innerHTML = renderSheet(d);
+  $('modal').classList.add('show');
+  $('modal').scrollTop = 0;
+});
+$('back').addEventListener('click', () => $('modal').classList.remove('show'));
+$('confirm').addEventListener('click', async () => {
+  const btn = $('confirm');
+  if (btn.disabled) return;
+  const d = collect();
+  btn.disabled = true;
+  btn.textContent = 'Отправка…';
+  let res;
+  try {
+    const resp = await fetch(ENDPOINT, { method: 'POST', body: await encryptReport(d) });
+    res = resp.ok ? { ok: true } : { ok: false, error: 'Сервис временно недоступен, попробуйте через минуту' };
+  } catch (e) {
+    res = { ok: false, error: e instanceof TypeError ? 'Нет связи с сервером. Проверьте интернет и нажмите ещё раз' : e.message };
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Подтвердить';
+  }
+  if (!res.ok) {
+    toast(res.error || 'Не удалось отправить доклад');
+    return;
+  }
+  try { localStorage.setItem('opora-officer', d.officer); localStorage.removeItem(STORE); } catch (e) {}
+  $('modal').classList.remove('show');
+  toast('Доклад отправлен');
+  apply({ officer: d.officer, shift: d.shift });
+  refresh();
+  window.scrollTo(0, 0);
+});
+$('reset').addEventListener('click', () => {
+  if (!confirm('Очистить все поля?')) return;
+  try { localStorage.removeItem(STORE); } catch (e) {}
+  document.querySelectorAll('.card.invalid').forEach(c => c.classList.remove('invalid'));
+  apply({ officer: officer.value });
+  save();
+});
+
+async function codeOk(code) {
+  if (!window.crypto || !crypto.subtle) return false;
+  const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('chopcheck:' + code));
+  return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, '0')).join('') === CODE_HASH;
+}
+async function initGate() {
+  let saved = '';
+  try { saved = localStorage.getItem('opora-code') || ''; } catch (e) {}
+  if (saved && await codeOk(saved)) { accessCode = saved; return; }
+  $('gate').classList.add('show');
+  $('gateCode').focus();
+}
+$('gateForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const code = $('gateCode').value.trim();
+  if (await codeOk(code)) {
+    accessCode = code;
+    try { localStorage.setItem('opora-code', code); } catch (e) {}
+    $('gate').classList.remove('show');
+    return;
+  }
+  $('gateErr').textContent = window.crypto && crypto.subtle ? 'Неверный код' : 'Откройте форму по ссылке https://';
+  $('gateCode').value = '';
+  $('gate').classList.remove('shake'); void $('gate').offsetWidth; $('gate').classList.add('shake');
+});
+
+initGate();
+load();
+refresh();
+</script>
+</body>
+</html>
